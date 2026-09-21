@@ -1,0 +1,6 @@
+{
+  "name": "Vidya Vikas EM School",
+  "description": "Official website of Vidya Vikas EM School, Kotauratla, Anakapalle District, Andhra Pradesh. Quality English Medium education, admissions, notices, and faculty directory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
