@@ -6,6 +6,8 @@ import {
   extractToken,
   getSession,
   hashPassword,
+  setStudentAccount,
+  setParentAccount,
 } from './serverDb';
 import {
   Student,
@@ -15,7 +17,11 @@ import {
   TimetableEntry,
   Exam,
   ExamResult,
+  FeeRecord,
+  FeePayment,
+  StaffAttendanceRecord,
 } from './src/types';
+import { devSampleCohort } from './src/data/portalSeedData';
 
 export const adminPortalRouter = Router();
 
@@ -91,6 +97,11 @@ adminPortalRouter.post('/api/admin/students', requireAdmin, (req: Request, res: 
   };
 
   db.students.push(newStudent);
+
+  if (studentData.password) {
+    setStudentAccount(newStudent, String(studentData.password).trim());
+  }
+
   logServerActivity(`Enrolled student: ${newStudent.name} (${newStudent.studentId})`, 'Student');
   saveDatabase();
 
@@ -112,6 +123,10 @@ adminPortalRouter.put('/api/admin/students/:id', requireAdmin, (req: Request, re
     id: db.students[idx].id,
     studentId: db.students[idx].studentId, // preserve institutional ID
   };
+
+  if (req.body.password) {
+    setStudentAccount(db.students[idx], String(req.body.password).trim());
+  }
 
   logServerActivity(`Updated student record: ${db.students[idx].name}`, 'Student');
   saveDatabase();
@@ -567,3 +582,375 @@ adminPortalRouter.delete('/api/admin/results/:id', requireAdmin, (req: Request, 
   saveDatabase();
   res.json({ success: true });
 });
+
+// Admin explicitly sets student login password
+adminPortalRouter.post('/api/admin/students/:id/password', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { password } = req.body;
+
+  if (!password || String(password).length < 6) {
+    res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    return;
+  }
+
+  const student = db.students.find((s) => s.id === id || s.studentId === id);
+  if (!student) {
+    res.status(404).json({ error: 'Student record not found.' });
+    return;
+  }
+
+  setStudentAccount(student, String(password).trim());
+  logServerActivity(`Admin reset password for student ${student.name} (${student.studentId})`, 'Security');
+  res.json({ success: true, message: `Password updated successfully for ${student.name}` });
+});
+
+// Admin explicitly sets parent login password
+adminPortalRouter.post('/api/admin/parents/:id/password', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { password } = req.body;
+
+  if (!password || String(password).length < 6) {
+    res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    return;
+  }
+
+  const parent = db.parents.find((p) => p.id === id || p.parentId === id);
+  if (!parent) {
+    res.status(404).json({ error: 'Parent record not found.' });
+    return;
+  }
+
+  setParentAccount(parent, String(password).trim());
+  logServerActivity(`Admin reset password for parent ${parent.name} (${parent.phone})`, 'Security');
+  res.json({ success: true, message: `Password updated successfully for parent ${parent.name}` });
+});
+
+// Development Only: Isolated test cohort seeding for testing portal UI empty/populated workflows
+adminPortalRouter.post('/api/admin/seed-dev-cohort', requireAdmin, (_req: Request, res: Response) => {
+  // Add test student if not present
+  const existingTest = db.students.find((s) => s.isDemo || s.studentId === 'VV-TEST-001');
+  if (existingTest) {
+    res.json({ success: true, message: 'Test cohort already active.' });
+    return;
+  }
+
+  db.students.push(...devSampleCohort.students);
+  db.parents.push(...devSampleCohort.parents);
+  saveDatabase();
+  logServerActivity('Admin loaded isolated dev test cohort for QA testing', 'System');
+  res.json({ success: true, message: 'Dev test cohort loaded. Remember to clear before production deployment.' });
+});
+
+// Clear all demo/test cohort data
+adminPortalRouter.post('/api/admin/clear-dev-cohort', requireAdmin, (_req: Request, res: Response) => {
+  db.students = db.students.filter((s) => !s.isDemo && !s.studentId.startsWith('VV-TEST'));
+  db.parents = db.parents.filter((p) => !p.isDemo && !p.parentId.startsWith('PAR-9000'));
+  saveDatabase();
+  logServerActivity('Admin cleared test cohort data', 'System');
+  res.json({ success: true, message: 'All test data cleared. System in clean production state.' });
+});
+
+// =================== FEES MANAGEMENT ===================
+adminPortalRouter.get('/api/admin/fees', requireAdmin, (req: Request, res: Response) => {
+  const { class: studentClass, status, search } = req.query;
+  let list = Array.isArray(db.fees) ? [...db.fees] : [];
+
+  if (studentClass && typeof studentClass === 'string' && studentClass !== 'all') {
+    list = list.filter((f) => f.class.toLowerCase() === studentClass.toLowerCase());
+  }
+
+  if (status && typeof status === 'string' && status !== 'all') {
+    list = list.filter((f) => f.status.toLowerCase() === status.toLowerCase());
+  }
+
+  if (search && typeof search === 'string' && search.trim()) {
+    const q = search.toLowerCase();
+    list = list.filter(
+      (f) =>
+        f.studentName.toLowerCase().includes(q) ||
+        f.studentId.toLowerCase().includes(q) ||
+        f.admissionNo.toLowerCase().includes(q)
+    );
+  }
+
+  res.json(list);
+});
+
+adminPortalRouter.post('/api/admin/fees', requireAdmin, (req: Request, res: Response) => {
+  const { studentId, totalFee, discount, dueDate, academicYear } = req.body;
+  const student = db.students.find((s) => s.studentId === studentId);
+  if (!student) {
+    res.status(404).json({ error: 'Student not found.' });
+    return;
+  }
+
+  const numTotal = Number(totalFee) || 0;
+  const numDiscount = Number(discount) || 0;
+  const net = Math.max(0, numTotal - numDiscount);
+
+  const newFee: FeeRecord = {
+    id: `fee-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    studentId: student.studentId,
+    studentName: student.name,
+    admissionNo: student.admissionNo,
+    class: student.class,
+    section: student.section,
+    academicYear: academicYear || student.academicYear || '2026–2027',
+    totalFee: numTotal,
+    discount: numDiscount,
+    netFee: net,
+    paidAmount: 0,
+    dueAmount: net,
+    status: net === 0 ? 'paid' : 'pending',
+    dueDate: dueDate || new Date().toISOString().split('T')[0],
+    payments: [],
+  };
+
+  if (!Array.isArray(db.fees)) db.fees = [];
+  db.fees.unshift(newFee);
+  saveDatabase();
+  logServerActivity(`Created fee record for student ${student.name} (${student.studentId})`, 'Fee');
+  res.status(201).json(newFee);
+});
+
+adminPortalRouter.post('/api/admin/fees/generate-class', requireAdmin, (req: Request, res: Response) => {
+  const { class: studentClass, totalFee, dueDate, academicYear } = req.body;
+  if (!studentClass) {
+    res.status(400).json({ error: 'Class name is required.' });
+    return;
+  }
+
+  const numTotal = Number(totalFee) || 0;
+  const year = academicYear || '2026–2027';
+  const targetStudents = db.students.filter((s) => s.class === studentClass && s.status === 'active');
+
+  if (!Array.isArray(db.fees)) db.fees = [];
+  let generatedCount = 0;
+
+  for (const stu of targetStudents) {
+    const existing = db.fees.find((f) => f.studentId === stu.studentId && f.academicYear === year);
+    if (!existing) {
+      db.fees.push({
+        id: `fee-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        studentId: stu.studentId,
+        studentName: stu.name,
+        admissionNo: stu.admissionNo,
+        class: stu.class,
+        section: stu.section,
+        academicYear: year,
+        totalFee: numTotal,
+        discount: 0,
+        netFee: numTotal,
+        paidAmount: 0,
+        dueAmount: numTotal,
+        status: numTotal === 0 ? 'paid' : 'pending',
+        dueDate: dueDate || new Date().toISOString().split('T')[0],
+        payments: [],
+      });
+      generatedCount++;
+    }
+  }
+
+  saveDatabase();
+  logServerActivity(`Generated ${generatedCount} fee records for ${studentClass}`, 'Fee');
+  res.json({ success: true, generatedCount, totalClassStudents: targetStudents.length });
+});
+
+adminPortalRouter.put('/api/admin/fees/:id', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const record = (db.fees || []).find((f) => f.id === id);
+  if (!record) {
+    res.status(404).json({ error: 'Fee record not found.' });
+    return;
+  }
+
+  const { totalFee, discount, dueDate, status } = req.body;
+  if (totalFee !== undefined) record.totalFee = Number(totalFee) || 0;
+  if (discount !== undefined) record.discount = Number(discount) || 0;
+  if (dueDate !== undefined) record.dueDate = dueDate;
+
+  record.netFee = Math.max(0, record.totalFee - record.discount);
+  record.dueAmount = Math.max(0, record.netFee - record.paidAmount);
+
+  if (status) {
+    record.status = status;
+  } else {
+    if (record.dueAmount <= 0) {
+      record.status = 'paid';
+    } else if (record.paidAmount > 0) {
+      record.status = 'partial';
+    } else {
+      record.status = 'pending';
+    }
+  }
+
+  saveDatabase();
+  res.json(record);
+});
+
+adminPortalRouter.post('/api/admin/fees/:id/pay', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const record = (db.fees || []).find((f) => f.id === id);
+  if (!record) {
+    res.status(404).json({ error: 'Fee record not found.' });
+    return;
+  }
+
+  const { amount, paymentMode, referenceNo, remarks, collectedBy } = req.body;
+  const payNum = Number(amount);
+  if (!payNum || payNum <= 0) {
+    res.status(400).json({ error: 'Valid payment amount is required.' });
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const receiptNo = `VVES-REC-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const payment: FeePayment = {
+    id: `pay-${Date.now()}`,
+    receiptNo,
+    date: dateStr,
+    amount: payNum,
+    paymentMode: paymentMode || 'Cash',
+    referenceNo: referenceNo || undefined,
+    collectedBy: collectedBy || (req as any).sessionUser?.name || 'Administrative Office',
+    remarks: remarks || undefined,
+  };
+
+  if (!Array.isArray(record.payments)) record.payments = [];
+  record.payments.push(payment);
+  record.paidAmount += payNum;
+  record.dueAmount = Math.max(0, record.netFee - record.paidAmount);
+  record.lastPaymentDate = dateStr;
+
+  if (record.dueAmount <= 0) {
+    record.status = 'paid';
+  } else {
+    record.status = 'partial';
+  }
+
+  saveDatabase();
+  logServerActivity(`Recorded payment of ₹${payNum} for ${record.studentName} (Receipt: ${receiptNo})`, 'Fee');
+  res.json({ success: true, fee: record, payment });
+});
+
+adminPortalRouter.delete('/api/admin/fees/:id', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const initialLength = (db.fees || []).length;
+  db.fees = (db.fees || []).filter((f) => f.id !== id);
+  if (db.fees.length === initialLength) {
+    res.status(404).json({ error: 'Fee record not found.' });
+    return;
+  }
+  saveDatabase();
+  res.json({ success: true, message: 'Fee record deleted successfully.' });
+});
+
+// =================== STAFF ATTENDANCE ===================
+adminPortalRouter.get('/api/admin/staff-attendance', requireAdmin, (req: Request, res: Response) => {
+  const { date } = req.query;
+  const targetDate = (typeof date === 'string' && date) ? date : new Date().toISOString().split('T')[0];
+  const records = (db.staffAttendance || []).filter((r) => r.date === targetDate);
+  res.json(records);
+});
+
+adminPortalRouter.post('/api/admin/staff-attendance/batch', requireAdmin, (req: Request, res: Response) => {
+  const { date, records } = req.body;
+  if (!date || !Array.isArray(records)) {
+    res.status(400).json({ error: 'Date and records array are required.' });
+    return;
+  }
+
+  if (!Array.isArray(db.staffAttendance)) db.staffAttendance = [];
+
+  // Remove existing records for this date
+  db.staffAttendance = db.staffAttendance.filter((r) => r.date !== date);
+
+  for (const item of records) {
+    if (item.facultyId && item.status) {
+      db.staffAttendance.push({
+        id: `sa-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        facultyId: item.facultyId,
+        facultyName: item.facultyName || 'Staff Member',
+        designation: item.designation || 'Teacher',
+        date,
+        status: item.status,
+        remarks: item.remarks || '',
+      });
+    }
+  }
+
+  saveDatabase();
+  logServerActivity(`Updated staff attendance for date ${date} (${records.length} records)`, 'Staff');
+  res.json({ success: true, count: records.length });
+});
+
+// =================== REPORTS SUMMARY API ===================
+adminPortalRouter.get('/api/admin/reports/summary', requireAdmin, (_req: Request, res: Response) => {
+  const students = db.students || [];
+  const attendance = db.attendance || [];
+  const fees = db.fees || [];
+  const homework = db.homework || [];
+  const exams = db.exams || [];
+  const results = db.results || [];
+  const admissions = db.admissions || [];
+  const faculty = db.faculty || [];
+
+  // Attendance stats
+  const totalAttendanceRecords = attendance.length;
+  const presentCount = attendance.filter((a) => a.status === 'present').length;
+  const overallAttendancePercent = totalAttendanceRecords > 0 
+    ? Math.round((presentCount / totalAttendanceRecords) * 100) 
+    : 0;
+
+  // Fee stats
+  const totalBilled = fees.reduce((sum, f) => sum + (f.netFee || 0), 0);
+  const totalCollected = fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
+  const totalOutstanding = fees.reduce((sum, f) => sum + (f.dueAmount || 0), 0);
+  const feeCollectionRate = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 0;
+
+  // Academic stats
+  const totalResults = results.length;
+  const passResults = results.filter((r) => r.status === 'pass').length;
+  const overallPassRate = totalResults > 0 ? Math.round((passResults / totalResults) * 100) : 0;
+
+  // Admission stats
+  const totalAdmissions = admissions.length;
+  const approvedAdmissions = admissions.filter((a) => a.status === 'admitted' || a.status === 'closed').length;
+  const pendingAdmissions = admissions.filter((a) => a.status === 'new' || a.status === 'pending').length;
+
+  res.json({
+    studentsCount: students.length,
+    facultyCount: faculty.filter((f) => f.isActive !== false).length,
+    attendance: {
+      totalRecords: totalAttendanceRecords,
+      present: presentCount,
+      percentage: overallAttendancePercent,
+    },
+    fees: {
+      totalBilled,
+      totalCollected,
+      totalOutstanding,
+      collectionRate: feeCollectionRate,
+      paidCount: fees.filter((f) => f.status === 'paid').length,
+      pendingCount: fees.filter((f) => f.status === 'pending' || f.status === 'overdue').length,
+    },
+    academics: {
+      totalExams: exams.length,
+      totalResults,
+      passRate: overallPassRate,
+    },
+    homework: {
+      totalAssignments: homework.length,
+      activeAssignments: homework.filter((h) => h.status === 'active').length,
+    },
+    admissions: {
+      total: totalAdmissions,
+      approved: approvedAdmissions,
+      pending: pendingAdmissions,
+    },
+  });
+});
+
+

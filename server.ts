@@ -5,16 +5,6 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import {
-  initialSchoolInfo,
-  initialNotices,
-  initialEvents,
-  initialFaculty,
-  initialGallery,
-  initialDownloads,
-  initialAdmissions,
-  initialContacts,
-} from './src/data/seedData';
-import {
   SchoolInfo,
   Notice,
   SchoolEvent,
@@ -23,8 +13,24 @@ import {
   DownloadItem,
   AdmissionEnquiry,
   ContactEnquiry,
-  ActivityLog,
 } from './src/types';
+
+import {
+  db,
+  saveDatabase,
+  logServerActivity,
+  extractToken,
+  isValidSession,
+  activeTokens,
+  hashPassword,
+  verifyPassword,
+  ENV_ADMIN_USER,
+  resetDatabaseToBaseline,
+} from './serverDb';
+import { studentRouter } from './serverStudentRoutes';
+import { parentRouter } from './serverParentRoutes';
+import { adminPortalRouter } from './serverAdminRoutes';
+import { staffRouter } from './serverStaffRoutes';
 
 dotenv.config();
 
@@ -32,118 +38,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '15mb' }));
-
-// Ensure data directory exists
-const DATA_DIR = path.join(process.cwd(), 'data');
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-const DB_FILE = path.join(DATA_DIR, 'database.json');
-
-interface DatabaseSchema {
-  schoolInfo: SchoolInfo;
-  notices: Notice[];
-  events: SchoolEvent[];
-  faculty: FacultyMember[];
-  gallery: GalleryItem[];
-  downloads: DownloadItem[];
-  admissions: AdmissionEnquiry[];
-  contacts: ContactEnquiry[];
-  activityLogs: ActivityLog[];
-  adminPasswordHash?: string;
-}
-
-function loadDatabase(): DatabaseSchema {
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(raw);
-    }
-  } catch (err) {
-    console.error('Error reading database.json, initializing fresh data:', err);
-  }
-
-  const freshDb: DatabaseSchema = {
-    schoolInfo: initialSchoolInfo,
-    notices: initialNotices,
-    events: initialEvents,
-    faculty: initialFaculty,
-    gallery: initialGallery,
-    downloads: initialDownloads,
-    admissions: initialAdmissions,
-    contacts: initialContacts,
-    activityLogs: [
-      {
-        id: 'log-001',
-        action: 'System initialized with verified school data and seed records',
-        entityType: 'System',
-        timestamp: new Date().toISOString(),
-        performedBy: 'System',
-      },
-    ],
-  };
-  saveDatabase(freshDb);
-  return freshDb;
-}
-
-let db: DatabaseSchema = loadDatabase();
-
-function saveDatabase(dataToSave?: DatabaseSchema): void {
-  try {
-    const data = dataToSave || db;
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error saving database.json:', err);
-  }
-}
-
-function logServerActivity(action: string, entityType: string, performedBy = 'Administrator') {
-  const newLog: ActivityLog = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    action,
-    entityType,
-    timestamp: new Date().toISOString(),
-    performedBy,
-  };
-  db.activityLogs = [newLog, ...db.activityLogs].slice(0, 100);
-}
-
-// =================== AUTHENTICATION ===================
-const activeTokens = new Map<string, { username: string; expiresAt: number }>();
-
-function hashPassword(pass: string): string {
-  return crypto.createHash('sha256').update(pass).digest('hex');
-}
-
-// Configured admin credentials from environment or default secure fallback
-const ENV_ADMIN_USER = process.env.ADMIN_USERNAME || 'admin';
-const ENV_ADMIN_PASS = process.env.ADMIN_PASSWORD || 'vidya2026';
-
-function verifyPassword(pass: string): boolean {
-  if (db.adminPasswordHash) {
-    return hashPassword(pass) === db.adminPasswordHash;
-  }
-  return pass === ENV_ADMIN_PASS;
-}
-
-function extractToken(req: Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7).trim();
-}
-
-function isValidSession(token: string | null): boolean {
-  if (!token) return false;
-  const session = activeTokens.get(token);
-  if (!session) return false;
-  if (Date.now() > session.expiresAt) {
-    activeTokens.delete(token);
-    return false;
-  }
-  return true;
-}
 
 function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
   const token = extractToken(req);
@@ -153,6 +47,12 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction): void
   }
   next();
 }
+
+// Mount Student, Parent, Staff, and Admin Extended Portals
+app.use(studentRouter);
+app.use(parentRouter);
+app.use(staffRouter);
+app.use(adminPortalRouter);
 
 // Health check route
 app.get('/api/health', (_req: Request, res: Response) => {
@@ -173,7 +73,12 @@ app.post('/api/auth/login', (req: Request, res: Response) => {
   if (cleanUser.toLowerCase() === ENV_ADMIN_USER.toLowerCase() && verifyPassword(cleanPass)) {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    activeTokens.set(token, { username: cleanUser, expiresAt });
+    activeTokens.set(token, {
+      username: cleanUser,
+      role: 'admin',
+      name: 'Administrator',
+      expiresAt,
+    });
 
     logServerActivity(`Administrator logged in successfully (${cleanUser})`, 'Auth', cleanUser);
     saveDatabase();
@@ -748,26 +653,7 @@ app.post('/api/admin/clear-demo', requireAdminAuth, (_req: Request, res: Respons
 });
 
 app.post('/api/admin/reset-demo', requireAdminAuth, (_req: Request, res: Response) => {
-  db = {
-    schoolInfo: initialSchoolInfo,
-    notices: initialNotices,
-    events: initialEvents,
-    faculty: initialFaculty,
-    gallery: initialGallery,
-    downloads: initialDownloads,
-    admissions: initialAdmissions,
-    contacts: initialContacts,
-    activityLogs: [
-      {
-        id: `log_${Date.now()}`,
-        action: 'Reset all school data to baseline seed configuration',
-        entityType: 'System',
-        timestamp: new Date().toISOString(),
-        performedBy: 'Administrator',
-      },
-    ],
-  };
-  saveDatabase(db);
+  resetDatabaseToBaseline();
   res.json({ success: true, message: 'Reset data to baseline configuration.' });
 });
 
@@ -1200,7 +1086,7 @@ ${schoolContext}`;
     contents.push({ role: 'user', parts: [{ text: cleanMessage }] });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.5-flash',
       contents,
       config: {
         systemInstruction,

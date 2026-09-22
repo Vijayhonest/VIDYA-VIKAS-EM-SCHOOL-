@@ -1,4 +1,4 @@
-export type NoticeCategory = 'general' | 'exam' | 'holiday' | 'admission' | 'event';
+export type NoticeCategory = 'general' | 'exam' | 'holiday' | 'admission' | 'event' | 'academic' | 'sports';
 
 export interface Notice {
   id: string;
@@ -7,6 +7,7 @@ export interface Notice {
   date: string;
   isPinned: boolean;
   isPublished?: boolean;
+  targetAudience?: 'all' | 'students' | 'parents' | 'staff';
   summary: string;
   content: string;
   attachmentName?: string;
@@ -56,6 +57,9 @@ export interface FacultyMember {
   shortProfile: string;
   photoUrl?: string;
   displayOrder?: number;
+  assignedClasses?: string;
+  phone?: string;
+  email?: string;
   isActive?: boolean;
   isLeadership?: boolean;
   isDemo?: boolean;
@@ -83,7 +87,7 @@ export interface AdmissionEnquiry {
   isDemo?: boolean;
 }
 
-export type ContactStatus = 'unread' | 'read' | 'resolved';
+export type ContactStatus = 'unread' | 'read' | 'replied' | 'resolved';
 
 export interface ContactEnquiry {
   id: string;
@@ -96,6 +100,8 @@ export interface ContactEnquiry {
   createdAt: string;
   submittedAt?: string;
   replyNotes?: string;
+  reply?: string;
+  repliedAt?: string;
   isDemo?: boolean;
 }
 
@@ -192,7 +198,9 @@ export interface Student {
   address: string;
   photoUrl?: string;
   status: 'active' | 'inactive' | 'transferred';
+  password?: string;
   createdAt: string;
+  isDemo?: boolean;
 }
 
 // =================== PARENTS ===================
@@ -206,6 +214,7 @@ export interface Parent {
   address: string;
   linkedStudentIds: string[]; // references Student.studentId
   createdAt: string;
+  isDemo?: boolean;
 }
 
 // =================== TEACHERS / STAFF ===================
@@ -226,6 +235,18 @@ export interface Teacher {
 
 // =================== ATTENDANCE ===================
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
+
+export interface AttendanceStats {
+  totalWorkingDays: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  percentage: number;
+  presentDays?: number;
+  absentDays?: number;
+  attendancePercentage?: number;
+}
 
 export interface AttendanceRecord {
   id: string;
@@ -267,6 +288,8 @@ export interface Homework {
   createdBy: string;
   status: 'active' | 'closed' | 'archived';
   submissions?: HomeworkSubmission[];
+  submission?: HomeworkSubmission;
+  mySubmission?: HomeworkSubmission;
 }
 
 // =================== TIMETABLE ===================
@@ -281,10 +304,19 @@ export interface TimetableEntry {
   time: string; // e.g., "09:00 AM – 09:45 AM"
   subject: string;
   teacherName: string;
+  room?: string;
 }
 
 // =================== EXAMS & RESULTS ===================
 export type ExamStatus = 'upcoming' | 'ongoing' | 'completed' | 'published';
+
+export interface ExamSubjectSchedule {
+  name: string;
+  date: string;
+  time?: string;
+  maxMarks?: number;
+  [key: string]: any;
+}
 
 export interface Exam {
   id: string;
@@ -294,6 +326,9 @@ export interface Exam {
   startDate: string;
   endDate: string;
   status: ExamStatus;
+  type?: string;
+  description?: string;
+  subjects?: ExamSubjectSchedule[];
 }
 
 export interface SubjectMark {
@@ -312,6 +347,8 @@ export interface ExamResult {
   class: string;
   section: string;
   rollNo: string;
+  admissionNo?: string;
+  academicYear?: string;
   subjects: SubjectMark[];
   totalMarks: number;
   totalMaxMarks: number;
@@ -321,3 +358,46 @@ export interface ExamResult {
   remarks?: string;
   publishedDate: string;
 }
+
+// =================== FEES ===================
+export interface FeePayment {
+  id: string;
+  receiptNo: string;
+  date: string;
+  amount: number;
+  paymentMode: 'Cash' | 'UPI' | 'Bank Transfer' | 'Cheque';
+  referenceNo?: string;
+  collectedBy: string;
+  remarks?: string;
+}
+
+export interface FeeRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  admissionNo: string;
+  class: string;
+  section: string;
+  academicYear: string;
+  totalFee: number;
+  discount: number;
+  netFee: number;
+  paidAmount: number;
+  dueAmount: number;
+  status: 'paid' | 'partial' | 'pending' | 'overdue';
+  dueDate: string;
+  payments: FeePayment[];
+  lastPaymentDate?: string;
+}
+
+// =================== STAFF ATTENDANCE ===================
+export interface StaffAttendanceRecord {
+  id: string;
+  facultyId: string;
+  facultyName: string;
+  designation: string;
+  date: string; // YYYY-MM-DD
+  status: 'present' | 'absent' | 'half-day' | 'leave';
+  remarks?: string;
+}
+

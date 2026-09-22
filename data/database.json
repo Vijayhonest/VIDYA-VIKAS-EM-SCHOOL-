@@ -378,7 +378,7 @@
       "gender": "Male",
       "address": "Kotauratla, Anakapalle District",
       "message": "Seeking admission in English medium for 6th class. Please share details on curriculum.",
-      "status": "pending",
+      "status": "contacted",
       "createdAt": "2026-03-12T10:15:00.000Z",
       "isDemo": true
     },
@@ -403,6 +403,17 @@
   ],
   "contacts": [
     {
+      "id": "con_1789987106819",
+      "name": "K. Venkata Ramana",
+      "phone": "9441971531",
+      "email": "parent.venkat@gmail.com",
+      "subject": "[Parent of K. Rajesh Kumar - Class 10]: Telugu ",
+      "message": "My sun study",
+      "status": "unread",
+      "createdAt": "2026-09-21T10:38:26.819Z",
+      "submittedAt": "2026-09-21T10:38:26.819Z"
+    },
+    {
       "id": "con-001",
       "name": "Parent Enquiry",
       "email": "enquiry.sample@gmail.com",
@@ -416,6 +427,41 @@
     }
   ],
   "activityLogs": [
+    {
+      "id": "log_1789987170164_00uxg",
+      "action": "Updated admission application status for \"B. Tarun\" to contacted",
+      "entityType": "Admission",
+      "timestamp": "2026-09-21T10:39:30.164Z",
+      "performedBy": "Administrator"
+    },
+    {
+      "id": "log_1789987148068_eksd3",
+      "action": "Administrator logged in successfully (Vijay)",
+      "entityType": "Auth",
+      "timestamp": "2026-09-21T10:39:08.068Z",
+      "performedBy": "Vijay"
+    },
+    {
+      "id": "log_1789987106819_kqw0e",
+      "action": "New message from parent: K. Venkata Ramana",
+      "entityType": "Contact",
+      "timestamp": "2026-09-21T10:38:26.819Z",
+      "performedBy": "Parent Portal"
+    },
+    {
+      "id": "log_1789987065152_1a74h",
+      "action": "Parent logged in: K. Venkata Ramana (9441971531)",
+      "entityType": "ParentAuth",
+      "timestamp": "2026-09-21T10:37:45.152Z",
+      "performedBy": "PAR-9441971531"
+    },
+    {
+      "id": "log_1789986970660_sgkg2",
+      "action": "Student logged in: K. Rajesh Kumar (VV-2026-001)",
+      "entityType": "StudentAuth",
+      "timestamp": "2026-09-21T10:36:10.660Z",
+      "performedBy": "VV-2026-001"
+    },
     {
       "id": "log_1789963946205_j08dd",
       "action": "Deleted admission enquiry for: \"Test Student\"",
@@ -493,5 +539,364 @@
       "timestamp": "2026-09-21T03:37:17.801Z",
       "performedBy": "System"
     }
-  ]
+  ],
+  "students": [],
+  "parents": [],
+  "attendance": [],
+  "homework": [],
+  "timetable": [
+    {
+      "id": "tt-110",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 2,
+      "time": "09:45 AM – 10:30 AM",
+      "subject": "Physical Science",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-111",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 3,
+      "time": "10:45 AM – 11:30 AM",
+      "subject": "English Grammar",
+      "teacherName": "V. Ramanamma"
+    },
+    {
+      "id": "tt-112",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 4,
+      "time": "11:30 AM – 12:15 PM",
+      "subject": "Telugu",
+      "teacherName": "G. Appala Swamy"
+    },
+    {
+      "id": "tt-113",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 5,
+      "time": "01:00 PM – 01:45 PM",
+      "subject": "Social Studies",
+      "teacherName": "D. Prasad"
+    },
+    {
+      "id": "tt-114",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 6,
+      "time": "01:45 PM – 02:30 PM",
+      "subject": "Biological Science",
+      "teacherName": "M. Anuradha"
+    },
+    {
+      "id": "tt-115",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 7,
+      "time": "02:40 PM – 03:25 PM",
+      "subject": "Hindi",
+      "teacherName": "B. Sunitha"
+    },
+    {
+      "id": "tt-116",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Tuesday",
+      "period": 8,
+      "time": "03:25 PM – 04:10 PM",
+      "subject": "Library & Reading",
+      "teacherName": "Staff In-charge"
+    },
+    {
+      "id": "tt-117",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 1,
+      "time": "09:00 AM – 09:45 AM",
+      "subject": "Physical Science",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-118",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 2,
+      "time": "09:45 AM – 10:30 AM",
+      "subject": "Mathematics",
+      "teacherName": "P. Srinivasa Rao"
+    },
+    {
+      "id": "tt-119",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 3,
+      "time": "10:45 AM – 11:30 AM",
+      "subject": "Social Studies",
+      "teacherName": "D. Prasad"
+    },
+    {
+      "id": "tt-120",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 4,
+      "time": "11:30 AM – 12:15 PM",
+      "subject": "English",
+      "teacherName": "V. Ramanamma"
+    },
+    {
+      "id": "tt-121",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 5,
+      "time": "01:00 PM – 01:45 PM",
+      "subject": "Telugu",
+      "teacherName": "G. Appala Swamy"
+    },
+    {
+      "id": "tt-122",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 6,
+      "time": "01:45 PM – 02:30 PM",
+      "subject": "Science Lab Practice",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-123",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 7,
+      "time": "02:40 PM – 03:25 PM",
+      "subject": "Hindi",
+      "teacherName": "B. Sunitha"
+    },
+    {
+      "id": "tt-124",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Wednesday",
+      "period": 8,
+      "time": "03:25 PM – 04:10 PM",
+      "subject": "Special Study Hour",
+      "teacherName": "P. Srinivasa Rao"
+    },
+    {
+      "id": "tt-125",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 1,
+      "time": "09:00 AM – 09:45 AM",
+      "subject": "Mathematics",
+      "teacherName": "P. Srinivasa Rao"
+    },
+    {
+      "id": "tt-126",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 2,
+      "time": "09:45 AM – 10:30 AM",
+      "subject": "English",
+      "teacherName": "V. Ramanamma"
+    },
+    {
+      "id": "tt-127",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 3,
+      "time": "10:45 AM – 11:30 AM",
+      "subject": "Biological Science",
+      "teacherName": "M. Anuradha"
+    },
+    {
+      "id": "tt-128",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 4,
+      "time": "11:30 AM – 12:15 PM",
+      "subject": "Physical Science",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-129",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 5,
+      "time": "01:00 PM – 01:45 PM",
+      "subject": "Social Studies",
+      "teacherName": "D. Prasad"
+    },
+    {
+      "id": "tt-130",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 6,
+      "time": "01:45 PM – 02:30 PM",
+      "subject": "Telugu",
+      "teacherName": "G. Appala Swamy"
+    },
+    {
+      "id": "tt-131",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 7,
+      "time": "02:40 PM – 03:25 PM",
+      "subject": "Moral Science / GK",
+      "teacherName": "Principal Office"
+    },
+    {
+      "id": "tt-132",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Thursday",
+      "period": 8,
+      "time": "03:25 PM – 04:10 PM",
+      "subject": "Games & PT",
+      "teacherName": "N. Simhachalam (PET)"
+    },
+    {
+      "id": "tt-133",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 1,
+      "time": "09:00 AM – 09:45 AM",
+      "subject": "Telugu",
+      "teacherName": "G. Appala Swamy"
+    },
+    {
+      "id": "tt-134",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 2,
+      "time": "09:45 AM – 10:30 AM",
+      "subject": "Mathematics",
+      "teacherName": "P. Srinivasa Rao"
+    },
+    {
+      "id": "tt-135",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 3,
+      "time": "10:45 AM – 11:30 AM",
+      "subject": "English",
+      "teacherName": "V. Ramanamma"
+    },
+    {
+      "id": "tt-136",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 4,
+      "time": "11:30 AM – 12:15 PM",
+      "subject": "Physical Science",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-137",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 5,
+      "time": "01:00 PM – 01:45 PM",
+      "subject": "Social Studies",
+      "teacherName": "D. Prasad"
+    },
+    {
+      "id": "tt-138",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 6,
+      "time": "01:45 PM – 02:30 PM",
+      "subject": "Biological Science",
+      "teacherName": "M. Anuradha"
+    },
+    {
+      "id": "tt-139",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 7,
+      "time": "02:40 PM – 03:25 PM",
+      "subject": "Hindi",
+      "teacherName": "B. Sunitha"
+    },
+    {
+      "id": "tt-140",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Friday",
+      "period": 8,
+      "time": "03:25 PM – 04:10 PM",
+      "subject": "Revision & Quiz",
+      "teacherName": "Class Teacher"
+    },
+    {
+      "id": "tt-141",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Saturday",
+      "period": 1,
+      "time": "09:00 AM – 09:45 AM",
+      "subject": "Mathematics Slip Test",
+      "teacherName": "P. Srinivasa Rao"
+    },
+    {
+      "id": "tt-142",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Saturday",
+      "period": 2,
+      "time": "09:45 AM – 10:30 AM",
+      "subject": "English Composition",
+      "teacherName": "V. Ramanamma"
+    },
+    {
+      "id": "tt-143",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Saturday",
+      "period": 3,
+      "time": "10:45 AM – 11:30 AM",
+      "subject": "Science Practical/Quiz",
+      "teacherName": "K. Lakshmi Narayana"
+    },
+    {
+      "id": "tt-144",
+      "class": "Class 10",
+      "section": "A",
+      "dayOfWeek": "Saturday",
+      "period": 4,
+      "time": "11:30 AM – 12:15 PM",
+      "subject": "Co-Curricular / Yoga",
+      "teacherName": "N. Simhachalam (PET)"
+    }
+  ],
+  "exams": [],
+  "results": [],
+  "userAccounts": []
 }

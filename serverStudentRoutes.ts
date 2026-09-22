@@ -8,10 +8,41 @@ import {
   getSession,
   activeTokens,
   hashPassword,
+  findStudentByAuth,
+  verifyStudentPassword,
 } from './serverDb';
 import { Student, HomeworkSubmission, UserAccount } from './src/types';
 
 export const studentRouter = Router();
+
+// Rate limiting map for student login attempts (IP or identifier)
+const studentLoginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+function checkRateLimit(key: string): { allowed: boolean; waitSeconds?: number } {
+  const record = studentLoginAttempts.get(key);
+  if (!record) return { allowed: true };
+  const now = Date.now();
+  if (now < record.lockedUntil) {
+    return { allowed: false, waitSeconds: Math.ceil((record.lockedUntil - now) / 1000) };
+  }
+  if (now >= record.lockedUntil) {
+    studentLoginAttempts.delete(key);
+  }
+  return { allowed: true };
+}
+
+function recordFailedAttempt(key: string): void {
+  const record = studentLoginAttempts.get(key) || { count: 0, lockedUntil: 0 };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes lockout
+  }
+  studentLoginAttempts.set(key, record);
+}
+
+function resetAttempts(key: string): void {
+  studentLoginAttempts.delete(key);
+}
 
 // Middleware to enforce student role
 export function requireStudentAuth(req: any, res: Response, next: NextFunction): void {
@@ -37,42 +68,38 @@ studentRouter.post('/api/auth/student-login', (req: Request, res: Response) => {
     return;
   }
 
-  const cleanId = String(studentId).trim().toUpperCase();
+  const cleanId = String(studentId).trim();
   const cleanPass = String(password).trim();
+  const rateLimitKey = `stu_${cleanId.toLowerCase()}_${req.ip || 'ip'}`;
 
-  // Find student by studentId or admissionNo
-  const student = db.students.find(
-    (s) =>
-      s.studentId.toUpperCase() === cleanId ||
-      s.admissionNo.toUpperCase() === cleanId ||
-      s.studentId.toUpperCase().replace(/-/g, '') === cleanId.replace(/-/g, '')
-  );
-
-  if (!student) {
-    res.status(401).json({ error: 'Invalid Student ID / Admission Number.' });
+  const rateCheck = checkRateLimit(rateLimitKey);
+  if (!rateCheck.allowed) {
+    res.status(429).json({
+      error: `Too many failed login attempts. Please wait ${rateCheck.waitSeconds} seconds before trying again.`,
+    });
     return;
   }
 
-  // Check custom account password if set
-  const customAccount = db.userAccounts.find(
-    (u) => u.studentId === student.studentId || u.username.toUpperCase() === student.studentId.toUpperCase()
-  );
+  // Find student by studentId or admissionNo
+  const student = findStudentByAuth(cleanId);
 
-  let isMatch = false;
-  if (customAccount) {
-    isMatch = customAccount.passwordHash === hashPassword(cleanPass);
-  } else {
-    // Default valid password: student123, or admission number (case-insensitive)
-    isMatch =
-      cleanPass === 'student123' ||
-      cleanPass.toLowerCase() === student.admissionNo.toLowerCase() ||
-      cleanPass === 'vidya2026';
+  if (!student) {
+    recordFailedAttempt(rateLimitKey);
+    res.status(401).json({ error: 'Invalid Student ID / Admission Number. Please contact school office.' });
+    return;
   }
 
+  // Check verified password against securely stored credentials
+  const isMatch = verifyStudentPassword(student, cleanPass);
+
   if (!isMatch) {
+    recordFailedAttempt(rateLimitKey);
     res.status(401).json({ error: 'Invalid password for this student account.' });
     return;
   }
+
+  // Successful authentication - clear rate limit counter
+  resetAttempts(rateLimitKey);
 
   // Generate secure session token
   const token = crypto.randomBytes(32).toString('hex');

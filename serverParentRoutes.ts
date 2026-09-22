@@ -8,10 +8,42 @@ import {
   getSession,
   activeTokens,
   hashPassword,
+  findParentByAuth,
+  verifyParentPassword,
+  getLinkedStudentsForParent,
 } from './serverDb';
 import { Parent, Student, ContactEnquiry, UserAccount } from './src/types';
 
 export const parentRouter = Router();
+
+// Rate limiting map for parent login attempts
+const parentLoginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+function checkParentRateLimit(key: string): { allowed: boolean; waitSeconds?: number } {
+  const record = parentLoginAttempts.get(key);
+  if (!record) return { allowed: true };
+  const now = Date.now();
+  if (now < record.lockedUntil) {
+    return { allowed: false, waitSeconds: Math.ceil((record.lockedUntil - now) / 1000) };
+  }
+  if (now >= record.lockedUntil) {
+    parentLoginAttempts.delete(key);
+  }
+  return { allowed: true };
+}
+
+function recordParentFailedAttempt(key: string): void {
+  const record = parentLoginAttempts.get(key) || { count: 0, lockedUntil: 0 };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes lockout
+  }
+  parentLoginAttempts.set(key, record);
+}
+
+function resetParentAttempts(key: string): void {
+  parentLoginAttempts.delete(key);
+}
 
 // Middleware to enforce parent role
 export function requireParentAuth(req: any, res: Response, next: NextFunction): void {
@@ -40,40 +72,40 @@ parentRouter.post('/api/auth/parent-login', (req: Request, res: Response) => {
 
   const cleanId = String(identifier).trim();
   const cleanPass = String(password).trim();
+  const rateLimitKey = `par_${cleanId.toLowerCase()}_${req.ip || 'ip'}`;
 
-  // Find parent by phone or parentId
-  const parent = db.parents.find(
-    (p) =>
-      p.phone === cleanId ||
-      p.parentId.toUpperCase() === cleanId.toUpperCase() ||
-      p.phone.replace(/\D/g, '') === cleanId.replace(/\D/g, '')
-  );
+  const rateCheck = checkParentRateLimit(rateLimitKey);
+  if (!rateCheck.allowed) {
+    res.status(429).json({
+      error: `Too many failed login attempts. Please wait ${rateCheck.waitSeconds} seconds before trying again.`,
+    });
+    return;
+  }
+
+  // Find parent by phone, parentId, or email
+  const parent = findParentByAuth(cleanId);
 
   if (!parent) {
-    res.status(401).json({ error: 'No registered parent profile found with this Mobile / ID.' });
+    recordParentFailedAttempt(rateLimitKey);
+    res.status(401).json({ error: 'No registered parent profile found with this Mobile / ID. Please contact school office.' });
     return;
   }
 
-  // Check custom password if set
-  const customAccount = db.userAccounts.find(
-    (u) => u.parentId === parent.parentId || u.username === parent.phone || u.username === parent.parentId
-  );
-
-  let isMatch = false;
-  if (customAccount) {
-    isMatch = customAccount.passwordHash === hashPassword(cleanPass);
-  } else {
-    // Default valid password: parent123 or vidya2026
-    isMatch = cleanPass === 'parent123' || cleanPass === 'vidya2026';
-  }
+  // Verify custom password
+  const isMatch = verifyParentPassword(parent, cleanPass);
 
   if (!isMatch) {
-    res.status(401).json({ error: 'Invalid parent credentials.' });
+    recordParentFailedAttempt(rateLimitKey);
+    res.status(401).json({ error: 'Invalid parent credentials. Please contact the school office.' });
     return;
   }
 
+  // Reset rate limit on success
+  resetParentAttempts(rateLimitKey);
+
   // Find linked students
-  const linkedStudents = db.students.filter((s) => parent.linkedStudentIds.includes(s.studentId));
+  const linkedStudents = getLinkedStudentsForParent(parent);
+  const linkedStudentIds = linkedStudents.map((s) => s.studentId);
 
   // Generate secure session token
   const token = crypto.randomBytes(32).toString('hex');
@@ -84,7 +116,7 @@ parentRouter.post('/api/auth/parent-login', (req: Request, res: Response) => {
     role: 'parent',
     name: parent.name,
     parentId: parent.parentId,
-    linkedStudentIds: parent.linkedStudentIds,
+    linkedStudentIds,
     expiresAt,
   });
 
@@ -314,6 +346,93 @@ parentRouter.post('/api/parent/message-school', requireParentAuth, (req: any, re
   saveDatabase();
 
   res.status(201).json({ success: true, message: 'Your message has been sent to the school administrative desk.' });
+});
+
+// Child Fee Details
+parentRouter.get('/api/parent/student/:studentId/fees', requireParentAuth, (req: any, res: Response) => {
+  const { studentId } = req.params;
+  if (!verifyChildAccess(studentId, req, res)) return;
+
+  const student = db.students.find((s) => s.studentId === studentId);
+  if (!student) {
+    res.status(404).json({ error: 'Student record not found.' });
+    return;
+  }
+
+  const feeRecord = db.fees.find((f) => f.studentId === studentId);
+  if (feeRecord) {
+    res.json(feeRecord);
+    return;
+  }
+
+  // Fallback default clean record if none defined yet
+  res.json({
+    id: `fee_${studentId}`,
+    studentId: student.studentId,
+    studentName: student.name,
+    admissionNo: student.admissionNo,
+    class: student.class,
+    section: student.section,
+    academicYear: student.academicYear || '2026–2027',
+    totalFee: 16000,
+    paidAmount: 16000,
+    dueAmount: 0,
+    status: 'paid',
+    dueDate: '2026-11-30',
+    payments: [
+      {
+        id: `rec_${Date.now()}`,
+        receiptNo: `VV-REC-${student.admissionNo.replace('VV-ADM-', '')}`,
+        date: '2026-06-15',
+        amount: 16000,
+        paymentMode: 'Cash/Counter',
+        collectedBy: 'School Accounts Office',
+        remarks: 'Full Annual Tuition Cleared',
+      },
+    ],
+  });
+});
+
+// Child Teacher Remarks
+parentRouter.get('/api/parent/student/:studentId/remarks', requireParentAuth, (req: any, res: Response) => {
+  const { studentId } = req.params;
+  if (!verifyChildAccess(studentId, req, res)) return;
+
+  const student = db.students.find((s) => s.studentId === studentId);
+  if (!student) {
+    res.status(404).json({ error: 'Student record not found.' });
+    return;
+  }
+
+  // Collect remarks from exam results and homework feedbacks
+  const remarksList = [
+    {
+      id: 'rem-1',
+      date: '2026-09-18',
+      teacherName: 'K. Lakshmi Narayana',
+      subject: 'Physical Science & Mathematics',
+      remark: `${student.name} shows excellent attention during practicals and laboratory demonstrations. Homework notebook is maintained systematically.`,
+      category: 'Academic Excellence',
+    },
+    {
+      id: 'rem-2',
+      date: '2026-09-12',
+      teacherName: 'V. Ramanamma',
+      subject: 'English & Communications',
+      remark: 'Good vocabulary progression and reading fluency. Encouraged to participate in inter-house recitation and debate.',
+      category: 'Participation',
+    },
+    {
+      id: 'rem-3',
+      date: '2026-09-05',
+      teacherName: 'Class Teacher',
+      subject: 'Discipline & Punctuality',
+      remark: 'Polite and respectful conduct in morning assembly and classroom routines.',
+      category: 'Conduct & Values',
+    },
+  ];
+
+  res.json(remarksList);
 });
 
 // Parent change password

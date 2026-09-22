@@ -15,6 +15,8 @@ import {
   Shield,
   Eye,
   FileDown,
+  Trophy,
+  Lock,
 } from 'lucide-react';
 import { SchoolInfo, Notice, SchoolEvent, GalleryItem } from '../types';
 import { ImageWithFallback } from '../components/common/ImageWithFallback';
@@ -28,6 +30,10 @@ interface HomePageProps {
   onNavigate: (tab: string) => void;
   onSelectNotice: (notice: Notice) => void;
   onOpenGalleryItem?: (item: GalleryItem) => void;
+  onOpenStudentPortal?: () => void;
+  onOpenParentPortal?: () => void;
+  onOpenStaffPortal?: () => void;
+  onOpenAdminLogin?: () => void;
 }
 
 export function HomePage({
@@ -38,6 +44,10 @@ export function HomePage({
   onNavigate,
   onSelectNotice,
   onOpenGalleryItem,
+  onOpenStudentPortal,
+  onOpenParentPortal,
+  onOpenStaffPortal,
+  onOpenAdminLogin,
 }: HomePageProps) {
   const [activeTabNoticeCategory, setActiveTabNoticeCategory] = useState<string>('all');
 
@@ -219,35 +229,62 @@ export function HomePage({
       {/* 3. WELCOME & PRINCIPAL MESSAGE SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Photo Card */}
+          {/* Photo & Sports Ground Cards */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="relative rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-slate-100">
-              <ImageWithFallback
-                src="/school-campus.jpg"
-                alt="Vidya Vikas EM School Campus Building"
-                className="w-full h-80 sm:h-96 object-cover"
-                fallbackTitle="Vidya Vikas EM School Building, Kotauratla"
-                category="Campus"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-slate-950/90 via-slate-950/60 to-transparent p-5 text-white">
+            {/* Campus Photo with Improved Cropping, Overlay & Responsive Height */}
+            <div className="relative rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-slate-900 group">
+              <div className="h-64 sm:h-80 md:h-96 w-full overflow-hidden">
+                <ImageWithFallback
+                  src="/school-campus.jpg"
+                  alt="Vidya Vikas EM School Campus Building, Kotauratla"
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  fallbackTitle="Vidya Vikas EM School Building, Kotauratla"
+                  category="Campus"
+                />
+              </div>
+              <div className="absolute inset-0 bg-linear-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 inset-x-0 p-5 text-white">
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block mb-1">
-                  Campus & Learning Environment
+                  Main Campus & Learning Environment
                 </span>
-                <p className="text-sm font-medium text-slate-200">
+                <p className="text-sm font-medium text-slate-100 leading-snug">
                   Peaceful school campus located in Kotauratla, facilitating holistic academic growth.
                 </p>
               </div>
             </div>
 
-            {/* Quick Fact Box */}
-            <div className="bg-blue-50 border border-blue-200/80 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-xs text-blue-800 font-semibold block">Affiliation / Status</span>
-                <span className="text-sm font-bold text-blue-950">AP State Board Curriculum (English Medium)</span>
+            {/* Dedicated Sports & Morning Assembly Ground Card */}
+            <div className="bg-linear-to-br from-blue-950 via-slate-900 to-blue-900 rounded-2xl p-5 text-white border border-blue-800/60 shadow-lg">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400 text-blue-950 font-black text-xs uppercase tracking-wider">
+                  <Trophy className="w-3.5 h-3.5 text-blue-950" />
+                  SPORTS
+                </span>
+                <span className="text-[11px] font-semibold text-slate-300">Campus Facilities</span>
               </div>
-              <div className="text-right">
-                <span className="text-xs text-blue-800 font-semibold block">Classes Taught</span>
-                <span className="text-sm font-bold text-blue-950">Pre-Primary to Class X</span>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-2 leading-snug">
+                School Sports & Morning Assembly Ground
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                Spacious open-air campus ground dedicated to daily morning assembly drills, mass physical exercise, yoga, volleyball, kho-kho, kabaddi, and annual sports athletics.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-200 pt-2 border-t border-blue-800/40">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Morning Assembly</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Physical Education & Yoga</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Volleyball & Kho-Kho</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Annual Athletics Meet</span>
+                </div>
               </div>
             </div>
           </div>
@@ -279,7 +316,7 @@ export function HomePage({
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <button
                 onClick={() => onNavigate('about')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-950 hover:bg-blue-900 text-white font-bold text-sm transition-all shadow-md"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-950 hover:bg-blue-900 text-white font-bold text-sm transition-all shadow-md cursor-pointer"
               >
                 <span>Read Full School Journey</span>
                 <ArrowRight className="w-4 h-4 text-amber-400" />
@@ -287,10 +324,186 @@ export function HomePage({
 
               <button
                 onClick={() => onNavigate('faculty')}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:text-blue-950 hover:bg-slate-100 font-semibold text-sm transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:text-blue-950 hover:bg-slate-100 font-semibold text-sm transition-colors cursor-pointer"
               >
                 <Users className="w-4 h-4 text-blue-900" />
                 <span>Meet Our Faculty</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3.5 DIGITAL STUDENT, PARENT & STAFF ACADEMIC PORTALS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-linear-to-br from-blue-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-10 text-white shadow-xl border border-blue-900/50">
+          <div className="max-w-3xl mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30 mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Campus Digital Platform</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black font-heading text-white tracking-tight">
+              School Portals for Students, Parents & Staff
+            </h2>
+            <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+              Empowering our school community with transparent real-time academic records, homework tracking, daily roll-call attendance, and administrative management.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 1. STUDENT ACADEMIC PORTAL */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition backdrop-blur-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 flex items-center justify-center mb-3">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">STUDENT PORTAL</h3>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3.5">
+                  Personal class timetable, homework submission tracker, attendance metrics, and downloadable term marksheets.
+                </p>
+                <ul className="text-xs text-slate-300 space-y-2 mb-5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Daily period schedule</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Homework assignments</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Marks & report cards</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>Study notes & syllabus</span>
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                onClick={onOpenStudentPortal}
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+              >
+                <span>Access Student</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* 2. PARENT PROGRESS PORTAL */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition backdrop-blur-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 flex items-center justify-center mb-3">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">PARENT PORTAL</h3>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3.5">
+                  Monitor children's attendance, review subject scores, check fee status, and message school authorities directly.
+                </p>
+                <ul className="text-xs text-slate-300 space-y-2 mb-5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                    <span>Multi-child phone login</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                    <span>Live daily attendance</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                    <span>Academic performance</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                    <span>Teacher communications</span>
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                onClick={onOpenParentPortal}
+                className="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+              >
+                <span>Access Parent</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* 3. STAFF ACADEMIC PORTAL */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition backdrop-blur-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-400 flex items-center justify-center mb-3">
+                  <Lock className="w-6 h-6 text-amber-400" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">STAFF PORTAL</h3>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3.5">
+                  Teacher workspace for fast attendance marking, homework publishing, exam mark scoring, and student directory.
+                </p>
+                <ul className="text-xs text-slate-300 space-y-2 mb-5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Mark daily attendance</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Create & review homework</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Subject marks entry</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Classroom timetable</span>
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                onClick={onOpenStaffPortal}
+                className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold text-xs flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+              >
+                <span>Access Staff</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* 4. ADMINISTRATOR CONSOLE */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition backdrop-blur-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-sky-500/20 border border-sky-400/30 text-sky-400 flex items-center justify-center mb-3">
+                  <Shield className="w-6 h-6 text-sky-400" />
+                </div>
+                <h3 className="text-base font-bold text-white mb-1.5">ADMIN CONSOLE</h3>
+                <p className="text-xs text-slate-300 leading-relaxed mb-3.5">
+                  Full school ERP control: manage admissions, fee ledger, teacher allocations, campus announcements, and analytics.
+                </p>
+                <ul className="text-xs text-slate-300 space-y-2 mb-5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    <span>School ERP overview</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    <span>Fee collection & receipts</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    <span>Student & staff rosters</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    <span>Admissions enquiries</span>
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                onClick={onOpenAdminLogin}
+                className="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+              >
+                <span>Access Admin</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -639,28 +852,37 @@ export function HomePage({
 
       {/* 9. ADMISSIONS CALL-TO-ACTION BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="bg-linear-to-r from-blue-950 via-blue-900 to-indigo-950 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-linear-to-r from-blue-950 via-blue-900 to-indigo-950 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden border border-amber-400/30">
+          {/* Subtle background glow */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+          
           <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-block px-3 py-1 rounded-full bg-amber-400 text-blue-950 text-xs font-black uppercase tracking-wider">
-              Admissions 2026–27 Open
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-blue-950 text-xs font-black uppercase tracking-wider shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-blue-950" />
+              <span>ADMISSIONS 2026–27 OPEN</span>
             </div>
+            
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-heading tracking-tight leading-tight">
-              Give Your Child the Advantage of Quality English Medium Education
+              Give Your Child the Advantage of Quality<br className="hidden sm:inline" /> English Medium Education
             </h2>
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+            
+            <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
               Registrations are open for LKG, UKG, and Classes I to IX at Vidya Vikas EM School, Kotauratla.
-              Submit your enquiry online or visit our school office.
             </p>
+            
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <button
-                onClick={() => onNavigate('admissions')}
-                className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold text-sm shadow-lg transition-all transform active:scale-95"
+                onClick={() => {
+                  onNavigate('admissions');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-6 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold text-sm shadow-xl hover:shadow-amber-400/20 transition-all transform active:scale-95 cursor-pointer"
               >
                 Apply Online Now
               </button>
               <a
                 href={`tel:${schoolInfo.phone}`}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 transition-all"
+                className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 backdrop-blur-xs transition-all active:scale-95"
               >
                 <Phone className="w-4 h-4 text-amber-400" />
                 <span>Call: {schoolInfo.phone}</span>

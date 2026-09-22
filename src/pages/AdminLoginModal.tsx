@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, User, KeyRound, AlertCircle, Sparkles, X, ShieldCheck } from 'lucide-react';
+import { Lock, User, KeyRound, AlertCircle, Eye, EyeOff, X, ShieldCheck } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useToast } from '../components/common/Toast';
 
@@ -13,6 +13,9 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
   const { showToast } = useToast();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +49,11 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-in fade-in duration-200"
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      tabIndex={-1}
+    >
       <div className="fixed inset-0" onClick={onClose} />
 
       <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
@@ -54,7 +61,7 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
         <div className="bg-blue-950 text-white p-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-white rounded-full transition-colors"
+            className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-white rounded-full transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -81,6 +88,21 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {showForgotHelp && (
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+                <div className="font-semibold flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-amber-600" />
+                  <span>Administrative Access Recovery</span>
+                </div>
+                <p className="text-amber-800">
+                  Administrator password resets require campus principal authentication keys or direct system administrator verification.
+                </p>
+                <div className="font-medium text-blue-950 pt-1">
+                  School Helpdesk: <a href="tel:9441971531" className="underline font-bold">9441971531</a>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                 Username
@@ -92,6 +114,7 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter administrator username"
+                  autoComplete="username"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-900/20 focus:border-blue-950"
                   required
                 />
@@ -99,20 +122,51 @@ export function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: AdminLoginM
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotHelp(!showForgotHelp)}
+                  className="text-xs text-blue-700 hover:text-blue-900 font-semibold cursor-pointer"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-900/20 focus:border-blue-950"
+                  placeholder="Enter password"
+                  autoComplete="current-password"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-900/20 focus:border-blue-950"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center space-x-2 text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 text-blue-900 focus:ring-blue-900"
+                />
+                <span>Remember session</span>
+              </label>
+              <span className="text-[11px] text-slate-400 font-medium">ERP Admin Console</span>
             </div>
 
             <div className="pt-2">

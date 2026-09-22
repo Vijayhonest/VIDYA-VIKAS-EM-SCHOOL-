@@ -9,6 +9,7 @@ import {
   Heart,
   ArrowUp,
   Lock,
+  Users,
 } from 'lucide-react';
 import { SchoolInfo } from '../../types';
 
@@ -16,9 +17,19 @@ interface FooterProps {
   schoolInfo: SchoolInfo;
   onNavigate: (tab: string) => void;
   onOpenAdminLogin: () => void;
+  onOpenStudentPortal?: () => void;
+  onOpenParentPortal?: () => void;
+  onOpenStaffPortal?: () => void;
 }
 
-export function Footer({ schoolInfo, onNavigate, onOpenAdminLogin }: FooterProps) {
+export function Footer({
+  schoolInfo,
+  onNavigate,
+  onOpenAdminLogin,
+  onOpenStudentPortal,
+  onOpenParentPortal,
+  onOpenStaffPortal,
+}: FooterProps) {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -167,25 +178,63 @@ export function Footer({ schoolInfo, onNavigate, onOpenAdminLogin }: FooterProps
             © {new Date().getFullYear()} {schoolInfo.name}, Kotauratla. All rights reserved.
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center flex-wrap gap-4 sm:gap-6">
+            {onOpenStudentPortal && (
+              <>
+                <button
+                  onClick={onOpenStudentPortal}
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Student Portal</span>
+                </button>
+                <span>•</span>
+              </>
+            )}
+
+            {onOpenParentPortal && (
+              <>
+                <button
+                  onClick={onOpenParentPortal}
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-indigo-400 transition-colors cursor-pointer"
+                >
+                  <span>Parent Portal</span>
+                </button>
+                <span>•</span>
+              </>
+            )}
+
+            {onOpenStaffPortal && (
+              <>
+                <button
+                  onClick={onOpenStaffPortal}
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-blue-400 transition-colors cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Staff Portal</span>
+                </button>
+                <span>•</span>
+              </>
+            )}
+
             <button
               onClick={onOpenAdminLogin}
-              className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Admin & Staff Portal</span>
+              <span>Admin Console</span>
             </button>
             <span>•</span>
             <button
               onClick={() => onNavigate('contact')}
-              className="hover:text-white transition-colors"
+              className="hover:text-white transition-colors cursor-pointer"
             >
               Help & Support
             </button>
             <span>•</span>
             <button
               onClick={scrollToTop}
-              className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
               aria-label="Scroll back to top"
             >
               <span>Back to top</span>

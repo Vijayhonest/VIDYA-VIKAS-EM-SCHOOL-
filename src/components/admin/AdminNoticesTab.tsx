@@ -43,6 +43,7 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
   const [form, setForm] = useState({
     title: '',
     category: 'general' as Notice['category'],
+    targetAudience: 'all' as 'all' | 'students' | 'parents' | 'staff',
     date: new Date().toISOString().split('T')[0],
     summary: '',
     content: '',
@@ -71,6 +72,7 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
     setForm({
       title: '',
       category: 'general',
+      targetAudience: 'all',
       date: new Date().toISOString().split('T')[0],
       summary: '',
       content: '',
@@ -87,6 +89,7 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
     setForm({
       title: n.title,
       category: n.category,
+      targetAudience: n.targetAudience || 'all',
       date: n.date || new Date().toISOString().split('T')[0],
       summary: n.summary,
       content: n.content || n.summary,
@@ -111,6 +114,7 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
         id: editingNotice ? editingNotice.id : `not-${Date.now()}`,
         title: form.title.trim(),
         category: form.category,
+        targetAudience: form.targetAudience,
         date: form.date,
         summary: form.summary.trim() || form.title.trim(),
         content: form.content.trim() || form.summary.trim() || form.title.trim(),
@@ -353,7 +357,7 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Category</label>
                   <select
@@ -366,6 +370,20 @@ export function AdminNoticesTab({ notices, onDataChange }: AdminNoticesTabProps)
                     <option value="holiday">Holiday</option>
                     <option value="admission">Admission</option>
                     <option value="event">Event</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Target Audience</label>
+                  <select
+                    value={form.targetAudience}
+                    onChange={(e) => setForm({ ...form, targetAudience: e.target.value as any })}
+                    className="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-white"
+                  >
+                    <option value="all">Everyone (All)</option>
+                    <option value="students">Students Only</option>
+                    <option value="parents">Parents Only</option>
+                    <option value="staff">Staff / Faculty</option>
                   </select>
                 </div>
 

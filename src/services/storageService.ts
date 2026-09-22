@@ -10,6 +10,16 @@ import {
   ActivityLog,
   AdmissionStatus,
   ContactStatus,
+  Student,
+  Parent,
+  AttendanceRecord,
+  Homework,
+  TimetableEntry,
+  Exam,
+  ExamResult,
+  FeeRecord,
+  FeePayment,
+  StaffAttendanceRecord,
 } from '../types';
 import {
   initialSchoolInfo,
@@ -794,3 +804,571 @@ export function resetToDefaults(): void {
 }
 
 export const resetToSeedData = resetToDefaults;
+
+// =================== ADMIN PORTAL API FUNCTIONS ===================
+
+// Students
+export async function fetchAdminStudents(classFilter?: string, search?: string): Promise<Student[]> {
+  try {
+    const params = new URLSearchParams();
+    if (classFilter && classFilter !== 'all') params.append('class', classFilter);
+    if (search) params.append('search', search);
+
+    const res = await fetch(`/api/admin/students?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin students:', err);
+    return [];
+  }
+}
+
+export async function createStudent(data: Partial<Student>): Promise<Student | null> {
+  try {
+    const res = await fetch('/api/admin/students', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    logActivity(`Enrolled student ${json.student?.name}`, 'Student');
+    return json.student;
+  } catch (err) {
+    console.error('Error creating student:', err);
+    return null;
+  }
+}
+
+export async function updateStudent(id: string, data: Partial<Student>): Promise<Student | null> {
+  try {
+    const res = await fetch(`/api/admin/students/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    logActivity(`Updated student ${json.student?.name}`, 'Student');
+    return json.student;
+  } catch (err) {
+    console.error('Error updating student:', err);
+    return null;
+  }
+}
+
+export async function deleteStudent(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/students/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      logActivity(`Deleted student record ${id}`, 'Student');
+    }
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting student:', err);
+    return false;
+  }
+}
+
+// Parents
+export async function fetchAdminParents(): Promise<Parent[]> {
+  try {
+    const res = await fetch('/api/admin/parents', {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin parents:', err);
+    return [];
+  }
+}
+
+export async function createParent(data: Partial<Parent>): Promise<Parent | null> {
+  try {
+    const res = await fetch('/api/admin/parents', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    logActivity(`Created parent profile ${json.parent?.name}`, 'Parent');
+    return json.parent;
+  } catch (err) {
+    console.error('Error creating parent:', err);
+    return null;
+  }
+}
+
+export async function updateParent(id: string, data: Partial<Parent>): Promise<Parent | null> {
+  try {
+    const res = await fetch(`/api/admin/parents/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    logActivity(`Updated parent ${json.parent?.name}`, 'Parent');
+    return json.parent;
+  } catch (err) {
+    console.error('Error updating parent:', err);
+    return null;
+  }
+}
+
+export async function deleteParent(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/parents/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting parent:', err);
+    return false;
+  }
+}
+
+// Attendance
+export async function fetchAdminAttendance(date?: string, classFilter?: string, studentId?: string): Promise<AttendanceRecord[]> {
+  try {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (classFilter && classFilter !== 'all') params.append('class', classFilter);
+    if (studentId) params.append('studentId', studentId);
+
+    const res = await fetch(`/api/admin/attendance?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching attendance:', err);
+    return [];
+  }
+}
+
+export async function markAttendance(studentId: string, date: string, status: string, remarks?: string): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/attendance', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ studentId, date, status, remarks }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error marking attendance:', err);
+    return false;
+  }
+}
+
+export async function markBatchAttendance(date: string, records: { studentId: string; status: string; remarks?: string }[]): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/attendance/batch', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ date, records }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error batch marking attendance:', err);
+    return false;
+  }
+}
+
+// Homework
+export async function fetchAdminHomework(): Promise<Homework[]> {
+  try {
+    const res = await fetch('/api/admin/homework', {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin homework:', err);
+    return [];
+  }
+}
+
+export async function createHomework(data: Partial<Homework>): Promise<Homework | null> {
+  try {
+    const res = await fetch('/api/admin/homework', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.homework;
+  } catch (err) {
+    console.error('Error creating homework:', err);
+    return null;
+  }
+}
+
+export async function updateHomework(id: string, data: Partial<Homework>): Promise<Homework | null> {
+  try {
+    const res = await fetch(`/api/admin/homework/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.homework;
+  } catch (err) {
+    console.error('Error updating homework:', err);
+    return null;
+  }
+}
+
+export async function deleteHomework(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/homework/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting homework:', err);
+    return false;
+  }
+}
+
+// Timetable
+export async function fetchAdminTimetable(classFilter?: string, section?: string): Promise<TimetableEntry[]> {
+  try {
+    const params = new URLSearchParams();
+    if (classFilter && classFilter !== 'all') params.append('class', classFilter);
+    if (section && section !== 'all') params.append('section', section);
+
+    const res = await fetch(`/api/admin/timetable?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin timetable:', err);
+    return [];
+  }
+}
+
+export async function createTimetableEntry(data: Partial<TimetableEntry>): Promise<TimetableEntry | null> {
+  try {
+    const res = await fetch('/api/admin/timetable', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.timetable;
+  } catch (err) {
+    console.error('Error creating timetable entry:', err);
+    return null;
+  }
+}
+
+export async function deleteTimetableEntry(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/timetable/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting timetable entry:', err);
+    return false;
+  }
+}
+
+// Exams
+export async function fetchAdminExams(): Promise<Exam[]> {
+  try {
+    const res = await fetch('/api/admin/exams', {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin exams:', err);
+    return [];
+  }
+}
+
+export async function createExam(data: Partial<Exam>): Promise<Exam | null> {
+  try {
+    const res = await fetch('/api/admin/exams', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.exam;
+  } catch (err) {
+    console.error('Error creating exam:', err);
+    return null;
+  }
+}
+
+export async function updateExam(id: string, data: Partial<Exam>): Promise<Exam | null> {
+  try {
+    const res = await fetch(`/api/admin/exams/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.exam;
+  } catch (err) {
+    console.error('Error updating exam:', err);
+    return null;
+  }
+}
+
+export async function deleteExam(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/exams/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting exam:', err);
+    return false;
+  }
+}
+
+// Results
+export async function fetchAdminResults(examId?: string, studentId?: string, classFilter?: string): Promise<ExamResult[]> {
+  try {
+    const params = new URLSearchParams();
+    if (examId) params.append('examId', examId);
+    if (studentId) params.append('studentId', studentId);
+    if (classFilter && classFilter !== 'all') params.append('class', classFilter);
+
+    const res = await fetch(`/api/admin/results?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin results:', err);
+    return [];
+  }
+}
+
+export async function saveExamResult(data: Partial<ExamResult>): Promise<ExamResult | null> {
+  try {
+    const res = await fetch('/api/admin/results', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.result;
+  } catch (err) {
+    console.error('Error saving exam result:', err);
+    return null;
+  }
+}
+
+export async function deleteExamResult(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/results/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting exam result:', err);
+    return false;
+  }
+}
+
+// =================== FEES ===================
+export async function fetchAdminFees(
+  classFilter?: string,
+  statusFilter?: string,
+  search?: string
+): Promise<FeeRecord[]> {
+  try {
+    const params = new URLSearchParams();
+    if (classFilter && classFilter !== 'all') params.append('class', classFilter);
+    if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+    if (search && search.trim()) params.append('search', search.trim());
+
+    const res = await fetch(`/api/admin/fees?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching admin fees:', err);
+    return [];
+  }
+}
+
+export async function createFeeRecord(data: {
+  studentId: string;
+  totalFee: number;
+  discount?: number;
+  dueDate?: string;
+  academicYear?: string;
+}): Promise<FeeRecord | null> {
+  try {
+    const res = await fetch('/api/admin/fees', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Error creating fee record:', err);
+    return null;
+  }
+}
+
+export async function generateClassFees(data: {
+  class: string;
+  totalFee: number;
+  dueDate?: string;
+  academicYear?: string;
+}): Promise<{ success: boolean; generatedCount?: number; totalClassStudents?: number; error?: string }> {
+  try {
+    const res = await fetch('/api/admin/fees/generate-class', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const errData = await res.json();
+      return { success: false, error: errData.error || 'Failed to generate fees' };
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('Error generating class fees:', err);
+    return { success: false, error: 'Network error generating class fees' };
+  }
+}
+
+export async function updateFeeRecord(id: string, data: Partial<FeeRecord>): Promise<FeeRecord | null> {
+  try {
+    const res = await fetch(`/api/admin/fees/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Error updating fee record:', err);
+    return null;
+  }
+}
+
+export async function payFeeRecord(
+  id: string,
+  paymentData: {
+    amount: number;
+    paymentMode: 'Cash' | 'UPI' | 'Bank Transfer' | 'Cheque';
+    referenceNo?: string;
+    remarks?: string;
+    collectedBy?: string;
+  }
+): Promise<{ success: boolean; fee?: FeeRecord; payment?: FeePayment; error?: string }> {
+  try {
+    const res = await fetch(`/api/admin/fees/${id}/pay`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(paymentData),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Payment failed' };
+    }
+    return { success: true, fee: data.fee, payment: data.payment };
+  } catch (err) {
+    console.error('Error recording fee payment:', err);
+    return { success: false, error: 'Network error while recording payment' };
+  }
+}
+
+export async function deleteFeeRecord(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/admin/fees/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error deleting fee record:', err);
+    return false;
+  }
+}
+
+// =================== STAFF ATTENDANCE ===================
+export async function fetchStaffAttendance(date?: string): Promise<StaffAttendanceRecord[]> {
+  try {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+
+    const res = await fetch(`/api/admin/staff-attendance?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching staff attendance:', err);
+    return [];
+  }
+}
+
+export async function saveStaffAttendanceBatch(
+  date: string,
+  records: Array<{
+    facultyId: string;
+    facultyName: string;
+    designation: string;
+    status: 'present' | 'absent' | 'half-day' | 'leave';
+    remarks?: string;
+  }>
+): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/staff-attendance/batch', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ date, records }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error('Error saving staff attendance:', err);
+    return false;
+  }
+}
+
+// =================== REPORTS SUMMARY ===================
+export async function fetchReportsSummary(): Promise<any> {
+  try {
+    const res = await fetch('/api/admin/reports/summary', {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Error fetching reports summary:', err);
+    return null;
+  }
+}
+
